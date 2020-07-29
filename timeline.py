@@ -33,6 +33,11 @@ OCCURRENCE_BODIES_COMP = 4
 
 def get_timeline():
     app = adsk.core.Application.get()
+
+    # activeProduct throws if start-up is not completed
+    if not app.isStartupComplete: # Backup solution: app.documents.count == 0:
+        return (TIMELINE_STATUS_PRODUCT_NOT_READY, None)
+
     product = app.activeProduct
     if product is None or product.classType() != 'adsk::fusion::Design':
         return (TIMELINE_STATUS_PRODUCT_NOT_READY, None)
