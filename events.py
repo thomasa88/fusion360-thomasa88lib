@@ -20,7 +20,7 @@
 
 import adsk.core, adsk.fusion, adsk.cam, traceback
 
-class EventsManger:
+class EventsManager:
     def __init__(self, addin_name='Add-in'):
         self.handlers = []
         self.custom_event_names = []
