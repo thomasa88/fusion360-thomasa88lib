@@ -18,5 +18,30 @@
 # You should have received a copy of the GNU General Public License
 # along with thomasa88lib.  If not, see <https://www.gnu.org/licenses/>.
 
+import adsk.core, adsk.fusion, adsk.cam, traceback
+
 def short_class(obj):
+    '''Returns shortened name of Object class'''
     return obj.classType().split('::')[-1]
+
+def get_fusion_deploy_folder():
+    '''
+    Get the Fusion 360 deploy folder.
+
+    Typically: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>
+    '''
+
+    return get_fusion_ui_resource_folder().replace('/Fusion/UI/FusionUI/Resources', '')
+
+_resFolder = None
+def get_fusion_ui_resource_folder():
+    '''
+    Get the Fusion UI resource folder. Note: Not all resources reside here.
+
+    Typically: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>/Fusion/UI/FusionUI/Resources
+    '''
+    global _resFolder
+    if not _resFolder:
+        app = adsk.core.Application.get()
+        _resFolder = app.userInterface.workspaces.itemById('FusionSolidEnvironment').resourceFolder.replace('/Environment/Model', '')
+    return _resFolder
