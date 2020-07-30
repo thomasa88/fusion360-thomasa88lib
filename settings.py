@@ -43,12 +43,12 @@ class SettingsManager:
             self.write()
 
     def write(self):
-        with open(self.file_path, 'w+') as f:
+        with open(self.file_path, 'w+', encoding='utf-8') as f:
             json.dump(self.settings, f)
 
     def _read(self):
         try:
-            with open(self.file_path, 'r') as f:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
                 self.settings = json.load(f)
         except FileNotFoundError:
             self.settings = self.default_values
