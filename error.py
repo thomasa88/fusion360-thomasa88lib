@@ -1,6 +1,9 @@
 # Error wrapper. Shows a message box and prints a message in the
 # debug console.
 #
+# Typically used instead of try/except in the base of event handlers
+# and run()/stop().
+#
 # This file is part of thomasa88lib, a library of useful Fusion 360
 # add-in/script functions.
 #
@@ -74,7 +77,7 @@ class ErrorCatcher():
             print(message)
 
             in_debugger = hasattr(sys, 'gettrace')
-            if not in_debugger or self.msgbox_in_debug:
+            if ui and not in_debugger or self.msgbox_in_debug:
                 print("Also showed in message box.")
                 ui.messageBox(message)
         

@@ -1,4 +1,8 @@
 # Event managing.
+# 
+# Allows catching events with functions instead of classes.
+# Tracks registered events and allows clean-up with one function call.
+# All event callbacks are also wrapped in an error.ErrorCatcher().
 #
 # This file is part of thomasa88lib, a library of useful Fusion 360
 # add-in/script functions.
@@ -20,19 +24,29 @@
 
 import adsk.core, adsk.fusion, adsk.cam, traceback
 
+# Avoid Fusion namespace pollution
+from . import error
+
 class EventsManager:
-    def __init__(self, addin_name='Add-in'):
+    def __init__(self, error_catcher=None):
         self.handlers = []
         self.custom_event_names = []
-        self.addin_name = addin_name
 
         self.app = adsk.core.Application.get()
         self.ui = self.app.userInterface
+
+        if not error_catcher:
+            error_catcher = error.ErrorCatcher()
+        self.error_catcher = error_catcher
+    
+    def clean_up(self):
+        self.remove_all_handlers()
+        self.unregister_all_events()
     
     def add_handler(self, event, base_class, notify_callback):
         handler_name = base_class.__name__ + '_' + notify_callback.__name__
         handler_class = type(handler_name, (base_class,),
-                            { "notify": self.error_catcher_wrapper(notify_callback) })
+                            { "notify": self._error_catcher_wrapper(notify_callback) })
         handler_class.__init__ = lambda self: super(handler_class, self).__init__()
         handler = handler_class()
         # Avoid garbage collection
@@ -41,19 +55,6 @@ class EventsManager:
         if not result:
             raise Exception('Failed to add handler ' + notify_callback.__name__)
 
-    def error_catcher_wrapper(self, func):
-        addin_name = self.addin_name
-        ui = self.ui
-        def catcher(self, args):
-            try:
-                func(args)
-            except:
-                print(f'{addin_name} event handler failure:\n{traceback.format_exc()}')
-                if ui:
-                    ui.messageBox(f'Copy this message using Ctrl+C.\n\n{addin_name} ' +
-                                  f'event handler failure:\n{traceback.format_exc()}')
-        return catcher
-    
     def remove_all_handlers(self):
         for handler, event in self.handlers:
             event.remove(handler)
@@ -72,7 +73,10 @@ class EventsManager:
         for event_name in self.custom_event_names:
             self.app.unregisterCustomEvent(event_name)
         self.custom_event_names.clear()
+
+    def _error_catcher_wrapper(class_self, func):
+        def catcher(func_self, args):
+            with class_self.error_catcher:
+                func(args)
+        return catcher
     
-    def clean_up(self):
-        self.remove_all_handlers()
-        self.unregister_all_events()
