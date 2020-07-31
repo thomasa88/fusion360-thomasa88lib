@@ -20,6 +20,9 @@
 
 import adsk.core, adsk.fusion, adsk.cam, traceback
 
+import inspect
+import os
+
 def short_class(obj):
     '''Returns shortened name of Object class'''
     return obj.classType().split('::')[-1]
@@ -45,3 +48,9 @@ def get_fusion_ui_resource_folder():
         app = adsk.core.Application.get()
         _resFolder = app.userInterface.workspaces.itemById('FusionSolidEnvironment').resourceFolder.replace('/Environment/Model', '')
     return _resFolder
+
+def get_caller_path():
+    '''Gets the filename of the file calling the function
+    that called this function. Used by the library.'''
+    caller_file = os.path.abspath(inspect.stack()[2][1])
+    return caller_file

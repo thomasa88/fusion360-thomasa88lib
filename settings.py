@@ -18,9 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with thomasa88lib.  If not, see <https://www.gnu.org/licenses/>.
 
-import inspect
 import json
 import os
+
+# Avoid Fusion namespace pollution
+from . import utils
 
 class SettingsManager:
     def __init__(self, default_values, write_through=True, filename='settings.json'):
@@ -28,7 +30,7 @@ class SettingsManager:
         self.write_through = write_through
         self.settings = None
 
-        caller_file = os.path.abspath((inspect.stack()[1])[1])
+        caller_file = utils.get_caller_path()
         caller_dir = os.path.dirname(caller_file)
         self.file_path = os.path.join(caller_dir, filename)
 
