@@ -49,11 +49,20 @@ class EventsManager:
                             { "notify": self._error_catcher_wrapper(notify_callback) })
         handler_class.__init__ = lambda self: super(handler_class, self).__init__()
         handler = handler_class()
-        # Avoid garbage collection
-        self.handlers.append((handler, event))
+        handler_info = (handler, event)
+
         result = event.add(handler)
         if not result:
             raise Exception('Failed to add handler ' + notify_callback.__name__)
+        
+        # Avoid garbage collection
+        self.handlers.append(handler_info)
+        return handler_info
+
+    def remove_handler(self, handler_info):
+        handler, event = handler_info
+        self.handlers.remove(handler_info)
+        event.remove(handler)
 
     def remove_all_handlers(self):
         for handler, event in self.handlers:
