@@ -19,5 +19,11 @@
 # You should have received a copy of the GNU General Public License
 # along with thomasa88lib.  If not, see <https://www.gnu.org/licenses/>.
 
-inkscape -z -w 16 -h 16 -e 16x16.png *.svg
-inkscape -z -w 32 -h 32 -e 32x32.png *.svg
+INKSCAPE=inkscape
+if ! which $INKSCAPE &> /dev/null; then
+    # Try to use Inkspace on Windows in Git Bash
+    INKSCAPE='/c/Program Files/Inkscape/inkscape.exe'
+fi
+
+"$INKSCAPE" -z -w 16 -h 16 -e 16x16.png *.svg
+"$INKSCAPE" -z -w 32 -h 32 -e 32x32.png *.svg
