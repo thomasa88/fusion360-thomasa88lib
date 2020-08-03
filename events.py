@@ -24,8 +24,14 @@
 
 import adsk.core, adsk.fusion, adsk.cam, traceback
 
+import sys
+
 # Avoid Fusion namespace pollution
 from . import error
+from . import utils
+
+# Try to resolve base class automatically
+AUTO_HANDLER_CLASS = None
 
 class EventsManager:
     def __init__(self, error_catcher=None):
@@ -43,17 +49,23 @@ class EventsManager:
         self.remove_all_handlers()
         self.unregister_all_events()
     
-    def add_handler(self, event, base_class, notify_callback):
-        handler_name = base_class.__name__ + '_' + notify_callback.__name__
-        handler_class = type(handler_name, (base_class,),
-                            { "notify": self._error_catcher_wrapper(notify_callback) })
+    def add_handler(self, event, handler_class=AUTO_HANDLER_CLASS, callback=None):
+        if handler_class == AUTO_HANDLER_CLASS:
+            handler_class_typename = event.classType() + 'Handler'
+            handler_class_parts = handler_class_typename.split('::')
+            handler_class = sys.modules[handler_class_parts[0]]
+            for cls in handler_class_parts[1:]:
+                handler_class = getattr(handler_class, cls)
+        handler_name = handler_class.__name__ + '_' + callback.__name__
+        handler_class = type(handler_name, (handler_class,),
+                            { "notify": self._error_catcher_wrapper(callback) })
         handler_class.__init__ = lambda self: super(handler_class, self).__init__()
         handler = handler_class()
         handler_info = (handler, event)
 
         result = event.add(handler)
         if not result:
-            raise Exception('Failed to add handler ' + notify_callback.__name__)
+            raise Exception('Failed to add handler ' + callback.__name__)
         
         # Avoid garbage collection
         self.handlers.append(handler_info)
