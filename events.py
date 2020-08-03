@@ -49,15 +49,15 @@ class EventsManager:
         self.remove_all_handlers()
         self.unregister_all_events()
     
-    def add_handler(self, event, handler_class=AUTO_HANDLER_CLASS, callback=None):
-        if handler_class == AUTO_HANDLER_CLASS:
+    def add_handler(self, event, base_class=AUTO_HANDLER_CLASS, callback=None):
+        if base_class == AUTO_HANDLER_CLASS:
             handler_class_typename = event.classType() + 'Handler'
             handler_class_parts = handler_class_typename.split('::')
-            handler_class = sys.modules[handler_class_parts[0]]
+            base_class = sys.modules[handler_class_parts[0]]
             for cls in handler_class_parts[1:]:
-                handler_class = getattr(handler_class, cls)
-        handler_name = handler_class.__name__ + '_' + callback.__name__
-        handler_class = type(handler_name, (handler_class,),
+                base_class = getattr(base_class, cls)
+        handler_name = base_class.__name__ + '_' + callback.__name__
+        handler_class = type(handler_name, (base_class,),
                             { "notify": self._error_catcher_wrapper(callback) })
         handler_class.__init__ = lambda self: super(handler_class, self).__init__()
         handler = handler_class()
