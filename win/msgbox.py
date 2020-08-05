@@ -91,6 +91,8 @@ user32.SetWindowsHookExW.argtypes = (ctypes.c_int,
 user32.GetDlgItem.argtypes = (ctypes.wintypes.HWND, ctypes.c_int)
 user32.GetDlgItem.restype = ctypes.wintypes.HWND
 
+user32.GetActiveWindow.restype = ctypes.wintypes.HWND
+
 def custom_msgbox(text, caption, dlg_type, label_map={}):
     '''Wrapper for MessageBox that allows setting button labels (Windows-only)
 
@@ -106,7 +108,8 @@ def custom_msgbox(text, caption, dlg_type, label_map={}):
                                            win_thread_id)
     #error = ctypes.get_last_error()
 
-    ret = user32.MessageBoxW(None, text, caption, dlg_type)
+    main_window = user32.GetActiveWindow()
+    ret = user32.MessageBoxW(main_window, text, caption, dlg_type)
     if hook_handle:
         user32.UnhookWindowsHookEx(hook_handle)
     
