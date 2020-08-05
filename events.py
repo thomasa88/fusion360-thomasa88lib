@@ -75,6 +75,8 @@ class EventsManager:
         handler, event = handler_info
         self.handlers.remove(handler_info)
         event.remove(handler)
+        # Let user assign their handle with the return value
+        return None
 
     def remove_all_handlers(self):
         for handler, event in self.handlers:
