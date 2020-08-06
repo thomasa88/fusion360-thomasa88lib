@@ -20,6 +20,7 @@ echo "Version: $VERSION"
 if [[ $VERSION =~ dirty ]]; then
     echo
     read -p "The repository is dirty. Continue anyway? [yN] " -n 1 -r
+    echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo Aborted
         exit 1
@@ -50,5 +51,18 @@ popd > /dev/null
 rm app.zip lib.zip
 rm -rf -- unpacked_release
 
+popd > /dev/null
+
 echo
 echo Release file: release/$ARCHIVE_NAME
+
+echo
+read -p "Open release directory and release webpage? [yN] " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    # Result: user/repo
+    GITHUB_REPO_PATH=$(git remote -v | awk 'match($0, /origin\s[^:]+:(.*)\.git\s+\(push\)/, m) { print m[1] }')
+
+    start release
+    start "https://github.com/$GITHUB_REPO_PATH/releases/new"
+fi
