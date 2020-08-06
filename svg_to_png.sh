@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Script for converting an SVG in the current directory to PNGs to
 # use for Fusion 360 icons.
 #
@@ -30,5 +32,10 @@ if ! which $INKSCAPE &> /dev/null; then
     INKSCAPE='/c/Program Files/Inkscape/inkscape.exe'
 fi
 
-"$INKSCAPE" -z -w 16 -h 16 -e 16x16.png *.svg
-"$INKSCAPE" -z -w 32 -h 32 -e 32x32.png *.svg
+SVG32=$(ls *.svg | grep -v _)
+SVG16=$SVG32
+if ls *_16.svg &>/dev/null; then
+    SVG16=$(echo *_16.svg)
+fi
+"$INKSCAPE" -z -w 16 -h 16 -e 16x16.png $SVG16
+"$INKSCAPE" -z -w 32 -h 32 -e 32x32.png $SVG32
