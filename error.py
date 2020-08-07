@@ -28,6 +28,8 @@
 # SOFTWARE.
 
 
+### TODO: Log errors during application startup and show when completed
+
 import adsk
 
 import os
@@ -81,8 +83,8 @@ class ErrorCatcher():
             
             print(message)
 
-            in_debugger = hasattr(sys, 'gettrace')
-            if ui and not in_debugger or self.msgbox_in_debug:
+            in_debugger = hasattr(sys, 'gettrace') and sys.gettrace()
+            if ui and (not in_debugger or self.msgbox_in_debug):
                 print("Also showed in message box.")
                 ui.messageBox(message)
         
