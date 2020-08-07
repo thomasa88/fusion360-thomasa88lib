@@ -27,9 +27,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
-### TODO: Log errors during application startup and show when completed
-
 import adsk
 
 import os
