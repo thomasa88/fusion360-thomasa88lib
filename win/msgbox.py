@@ -25,6 +25,8 @@
 
 import adsk
 import ctypes
+# Must explicitly include wintypes for code to work at Fusion start-up
+import ctypes.wintypes
 
 user32 = ctypes.WinDLL('user32', use_last_error=True)
 _hook_factory = ctypes.WINFUNCTYPE(ctypes.wintypes.LPARAM,
