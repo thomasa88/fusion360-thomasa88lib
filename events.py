@@ -30,6 +30,7 @@
 import adsk.core, adsk.fusion, adsk.cam, traceback
 
 import sys
+import threading
 
 # Avoid Fusion namespace pollution
 from . import error
@@ -42,6 +43,11 @@ class EventsManager:
     def __init__(self, error_catcher=None):
         self.handlers = []
         self.custom_event_names = []
+
+        self.next_delay_id = 0
+        self.delayed_funcs = {}
+        self.delayed_event = None
+        self.delayed_event_id = utils.get_caller_path() + '_delay_event'
 
         self.app = adsk.core.Application.get()
         self.ui = self.app.userInterface
@@ -102,9 +108,40 @@ class EventsManager:
             self.app.unregisterCustomEvent(event_name)
         self.custom_event_names.clear()
 
+    def delay(self, func, secs=0):
+        '''Puts a function at the end of the event queue,
+        and optionally delays it.
+        '''
+
+        if self.delayed_event is None:
+            # Register the event. Will be removed when user runs clean_up()
+            self.delayed_event = self.register_event(self.delayed_event_id)
+            self.add_handler(self.delayed_event,
+                             callback=self._delayed_event_handler)
+
+        delay_id = self.next_delay_id
+        self.next_delay_id += 1
+
+        def waiter():
+            time.sleep(secs)
+            self.app.fireCustomEvent(self.delayed_event_id, str(delay_id))
+
+        self.delayed_funcs[delay_id] = func
+
+        if secs > 0:
+            thread = threading.Thread(target=waiter)
+            thread.isDaemon = True
+            thread.start()
+        else:
+            self.app.fireCustomEvent(self.delayed_event_id, str(delay_id))    
+
     def _error_catcher_wrapper(class_self, func):
         def catcher(func_self, args):
             with class_self.error_catcher:
                 func(args)
         return catcher
-    
+
+    def _delayed_event_handler(self, args: adsk.core.CustomEventArgs):
+        delay_id = int(args.additionalInfo)
+        func = self.delayed_funcs.pop(delay_id, lambda: None)
+        func()
