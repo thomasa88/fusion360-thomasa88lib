@@ -36,7 +36,12 @@ def get_fusion_deploy_folder():
     '''
     Get the Fusion 360 deploy folder.
 
-    Typically: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>
+    Typically:
+     * Windows: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>
+    
+    ### TODO: Make this function work on Mac, if it is even possible...
+     * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>/Autodesk Fusion 360.app/Contents/Libraries/Neutron
+     * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>/Autodesk Fusion 360.app/Contents/Libraries/Applications/Fusion
     '''
 
     return get_fusion_ui_resource_folder().replace('/Fusion/UI/FusionUI/Resources', '')
@@ -46,7 +51,12 @@ def get_fusion_ui_resource_folder():
     '''
     Get the Fusion UI resource folder. Note: Not all resources reside here.
 
-    Typically: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>/Fusion/UI/FusionUI/Resources
+    Typically:
+     * Windows: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>/Fusion/UI/FusionUI/Resources
+    
+    ### TODO: Make this function work on Mac, if it is even possible...
+     * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>/Autodesk Fusion 360.app/Contents/Libraries/Neutron/Neutron/UI/Commands/Resources
+     * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>/Autodesk Fusion 360.app/Contents/Libraries/Applications/Fusion/Fusion/UI/FusionUI/Resources
     '''
     global _resFolder
     if not _resFolder:
