@@ -63,6 +63,11 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     # Result: user/repo
     GITHUB_REPO_PATH=$(git remote -v | awk 'match($0, /origin\s[^:]+:(.*)\.git\s+\(push\)/, m) { print m[1] }')
 
+    VERSION_NUMBER_ONLY=$(echo $VERSION | tr -d 'v ')
+    ESCAPED_VERSION=$(echo $VERSION_NUMBER_ONLY | sed 's/\./\\./g' | sed 's/-dirty//')
+    CHANGELOG=$(awk '/^\*/ {in_version=0;} {if(in_version) { print; }} /^\* *v *'"$ESCAPED_VERSION"'/ {in_version=1;}' README.md)
+    CHANGELOG_URL_FORMAT=$(echo "$CHANGELOG" | perl -MURI::Escape -e 'while(<>) { print uri_escape($_); }')
+
     start release
-    start "https://github.com/$GITHUB_REPO_PATH/releases/new"
+    start "https://github.com/$GITHUB_REPO_PATH/releases/new?tag=$VERSION&title=$VERSION&body=$CHANGELOG_URL_FORMAT"
 fi
