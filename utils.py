@@ -63,6 +63,22 @@ def get_fusion_ui_resource_folder():
 
 def get_caller_path():
     '''Gets the filename of the file calling the function
-    that called this function. Used by the library.'''
+    that called this function. Used by the library.
+    
+    That is, is nested in "two steps".
+    '''
     caller_file = os.path.abspath(inspect.stack()[2][1])
     return caller_file
+
+def get_file_path():
+    '''Gets the filename of the function that called this
+    function.'''
+    caller_file = os.path.abspath(inspect.stack()[1][1])
+    return caller_file
+
+def get_file_dir():
+    '''Gets the directory containing the file which function
+    called this function.'''
+    caller_file = os.path.dirname(os.path.abspath(inspect.stack()[1][1]))
+    return caller_file
+
