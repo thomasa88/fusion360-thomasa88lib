@@ -31,6 +31,7 @@ import adsk.core, adsk.fusion, adsk.cam, traceback
 
 import sys
 import threading
+import time
 
 # Avoid Fusion namespace pollution
 from . import error
