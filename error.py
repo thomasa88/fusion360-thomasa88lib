@@ -84,10 +84,12 @@ class ErrorCatcher():
             # Attempt to scrub the user's username from the traceback, if any remains
             tb_str = tb_str.replace(getpass.getuser(), '<user>')
 
-            message = ('Copy this message using Ctrl+C (Windows) or take a screenshot (Mac):\n\n' +
-                        f'{self.msg_prefix}\n\n' +
-                        f'{caller} failed:\n\n' +
-                        tb_str)
+            message = (f'{self.msg_prefix} error: {value}\n\n' +
+                       'Copy this message using Ctrl+C (Windows) or take a screenshot (Mac). ' +
+                       'Describe what you did to get this error or record a video.\n\n' +
+                       '-' * 50 + '\n\n' +
+                       f'{caller} failed: \n\n' +
+                       tb_str)
             
             print(message)
 
