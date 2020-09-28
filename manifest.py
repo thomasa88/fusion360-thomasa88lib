@@ -24,13 +24,15 @@
 # SOFTWARE.
 
 import json
-import os
+import pathlib
 
 # Avoid Fusion namespace pollution
 from . import utils
 
-def read():
-    caller_file = utils.get_caller_path()
-    manifest_path = caller_file.replace('.py', '.manifest')
+def read(directory=None):
+    if not directory:
+        caller_path = pathlib.Path(utils.get_caller_path())
+        directory = caller_path.parent
+    manifest_path = next(pathlib.Path(directory).glob('*.manifest'))
     with open(manifest_path, encoding='utf-8') as manifest_file:
         return json.load(manifest_file)

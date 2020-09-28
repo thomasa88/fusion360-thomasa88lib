@@ -29,6 +29,7 @@
 
 import adsk
 
+import getpass
 import os
 import re
 import sys
@@ -36,9 +37,10 @@ import traceback
 
 # Avoid Fusion namespace pollution
 from . import utils
+from . import manifest
 
 class ErrorCatcher():
-    def __init__(self, msgbox_in_debug=False):
+    def __init__(self, msgbox_in_debug=False, msg_prefix=''):
         '''Initialize the error catcher.
 
         Showing a messagebox is disabled in debugging, by default,
@@ -46,7 +48,8 @@ class ErrorCatcher():
         fails to reattach on Restart.
 
         msgbox_in_debug: Show an error message box also when debugging.
-
+        msg_prefix: Prefix error message with this text. E.g. with
+                    add-in name and version.
 
         Usage:
 
@@ -60,6 +63,7 @@ class ErrorCatcher():
                 code that can throw
         '''
         self.msgbox_in_debug = msgbox_in_debug
+        self.msg_prefix = msg_prefix
 
     def __enter__(self):
         self.caller_file = utils.get_caller_path()
@@ -74,7 +78,14 @@ class ErrorCatcher():
 
             tb_str = ''.join(traceback.format_exception(etype, value, tb))
 
-            message = ('Copy this message using Ctrl+C:\n\n' +
+            # Shorten file paths, to compact the message
+            tb_str = re.sub(r'"[^"]+/(?:API/AddIns|Api/Python)', '"', tb_str)
+
+            # Attempt to scrub the user's username from the traceback, if any remains
+            tb_str = tb_str.replace(getpass.getuser(), '<user>')
+
+            message = ('Copy this message using Ctrl+C (Windows) or take a screenshot (Mac):\n\n' +
+                        f'{self.msg_prefix}\n\n' +
                         f'{caller} failed:\n\n' +
                         tb_str)
             
