@@ -27,24 +27,30 @@ import adsk.core, adsk.fusion, adsk.cam, traceback
 
 import inspect
 import os
+import re
 
 def short_class(obj):
     '''Returns shortened name of Object class'''
     return obj.classType().split('::')[-1]
 
+_DEPLOY_FOLDER_PATTERN = re.compile(r'.*/webdeploy/production/[^/]+')
 def get_fusion_deploy_folder():
     '''
     Get the Fusion 360 deploy folder.
 
     Typically:
      * Windows: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>
-    
-    ### TODO: Make this function work on Mac, if it is even possible... or should we split right after the hash here as well..?
-     * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>/Autodesk Fusion 360.app/Contents/Libraries/Neutron
-     * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>/Autodesk Fusion 360.app/Contents/Libraries/Applications/Fusion
+     * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>
+
+    NOTE! The structure within the deploy folder is not the same on Windows and Mac!
+    E.g. see the examples for get_fusion_ui_resource_folder().
     '''
 
-    return get_fusion_ui_resource_folder().replace('/Fusion/UI/FusionUI/Resources', '')
+    # Strip the suffix from the UI resource folder, i.e.:
+    # Windows: /Fusion/UI/FusionUI/Resources
+    # Mac: /Autodesk Fusion 360.app/Contents/Libraries/Applications/Fusion/Fusion/UI/FusionUI/Resources
+
+    return _DEPLOY_FOLDER_PATTERN.match(get_fusion_ui_resource_folder()).group(0)
 
 _resFolder = None
 def get_fusion_ui_resource_folder():
