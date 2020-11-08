@@ -4,6 +4,12 @@
 
 set -e
 
+START_CMD=start
+if which xdg-open; then
+    # Linux (Ubuntu/Gnome)
+    START_CMD=xdg-open
+fi
+
 # Safety check. The lib should exist as a subdirectory
 # if the user is in the correct directory.
 if [[ ! -e .git ]] || [[ ! -e thomasa88lib/.git ]]; then
@@ -68,6 +74,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     CHANGELOG=$(awk '/^\*/ {in_version=0;} {if(in_version) { print; }} /^\* *v *'"$ESCAPED_VERSION"'/ {in_version=1;}' README.md)
     CHANGELOG_URL_FORMAT=$(echo "$CHANGELOG" | perl -MURI::Escape -e 'while(<>) { print uri_escape($_); }')
 
-    start release
-    start "https://github.com/$GITHUB_REPO_PATH/releases/new?tag=$VERSION&title=$VERSION&body=$CHANGELOG_URL_FORMAT"
+    $START_CMD release
+    $START_CMD "https://github.com/$GITHUB_REPO_PATH/releases/new?tag=$VERSION&title=$VERSION&body=$CHANGELOG_URL_FORMAT"
 fi
