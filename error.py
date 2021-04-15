@@ -85,9 +85,10 @@ class ErrorCatcher():
             tb_str = tb_str.replace(getpass.getuser(), '<user>')
 
             message = (f'{self.msg_prefix} error: {value}\n\n' +
-                       'Copy this message using Ctrl+C (Windows) or take a screenshot (Mac). ' +
+                       'Copy this message by taking a screenshot. ' +
                        'Describe what you did to get this error or record a video.\n\n' +
                        '-' * 50 + '\n\n' +
+                       f'Fusion 360 v. {app.version}\n' +
                        f'{caller} failed: \n\n' +
                        tb_str)
             
