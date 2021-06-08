@@ -67,7 +67,7 @@ read -p "Open release directory and release webpage? [yN] " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     # Result: user/repo
-    GITHUB_REPO_PATH=$(git remote -v | awk 'match($0, /origin\s[^:]+:(.*)(?:\.git)?\s+\(push\)/, m) { print m[1] }')
+    GITHUB_REPO_PATH=$(git remote -v | awk 'match($0, /origin\s[^:]+:(.*)(?:\.git)?\s+\(push\)/, m) { print m[1] }' | sed 's/\.git//')
 
     VERSION_NUMBER_ONLY=$(echo $VERSION | tr -d 'v ')
     ESCAPED_VERSION=$(echo $VERSION_NUMBER_ONLY | sed 's/\./\\./g' | sed 's/-dirty//')
