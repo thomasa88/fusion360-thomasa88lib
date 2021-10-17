@@ -37,5 +37,9 @@ SVG16=$SVG32
 if ls *_16.svg &>/dev/null; then
     SVG16=$(echo *_16.svg)
 fi
-"$INKSCAPE" -z -w 16 -h 16 -e 16x16.png $SVG16
-"$INKSCAPE" -z -w 32 -h 32 -e 32x32.png $SVG32
+#"$INKSCAPE" -z -w 16 -h 16 -e 16x16.png $SVG16
+#"$INKSCAPE" -z -w 32 -h 32 -e 32x32.png $SVG32
+#"$INKSCAPE" --export-type=png  $SVG32
+"$INKSCAPE" --export-width=16 --export-height=16 -o 16x16.png  $SVG16
+"$INKSCAPE" --export-width=32 --export-height=32 -o 32x32.png  $SVG32
+
