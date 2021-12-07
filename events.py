@@ -27,122 +27,113 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import adsk.core, adsk.fusion, adsk.cam, traceback
 
-import sys
-import threading
-import time
-
+import adsk.core, adsk.fusion, adsk.cam
+import sys, time
+import threading, traceback
 # Avoid Fusion namespace pollution
-from . import error
-from . import utils
+from . import error, utils
 
 # Try to resolve base class automatically
 AUTO_HANDLER_CLASS = None
 
 class EventsManager:
-    def __init__(self, error_catcher=None):
-        self.handlers = []
-        self.custom_event_names = []
+	def __init__(self, error_catcher=None):
+		#Declared in init to allow multiple commands to use a single lib
+		self.handlers = []
+		self.custom_event_names = []
+		self.app, self.ui = utils.AppObjects()
 
-        self.next_delay_id = 0
-        self.delayed_funcs = {}
-        self.delayed_event = None
-        self.delayed_event_id = utils.get_caller_path() + '_delay_event'
+		self.next_delay_id = 0
+		self.delayed_funcs = {}
+		self.delayed_event = None
+		self.delayed_event_id = utils.get_caller_path() + '_delay_event'
+		self.error_catcher = error_catcher if error_catcher != None else error.ErrorCatcher()
+	
+	#Assigning
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	def add_handler(self, event, base_class=AUTO_HANDLER_CLASS, callback=None):
+		"""`AUTO_HANDLER_CLASS` results in:
+		  1: Getting the classType
+		  2: Adding 'Handler' to the end
+		  3: Splitting at '::'
+		  4: Getting the module using the first segment
+		  5: sets baseClass to the return of getattr using the base and all subsequent segments (should be 1)"""
+		if base_class == AUTO_HANDLER_CLASS:
+			handler_classType_name = event.classType() + 'Handler'
+			handler_class_parts = handler_classType_name.split('::')
+			base_class = sys.modules[handler_class_parts[0]]
+			for cls in handler_class_parts[1:]: base_class = getattr(base_class, cls)
 
-        self.app = adsk.core.Application.get()
-        self.ui = self.app.userInterface
+		handler_name = base_class.__name__ + '_' + callback.__name__
+		handler_class = type(handler_name, (base_class,), {"notify": error._error_catcher_wrapper(self, callback)})
+		handler_class.__init__ = lambda self: super(handler_class, self).__init__()
+		
+		handler = handler_class()
+		handler_info = (handler, event)
 
-        if not error_catcher:
-            error_catcher = error.ErrorCatcher()
-        self.error_catcher = error_catcher
-    
-    def clean_up(self):
-        self.remove_all_handlers()
-        self.unregister_all_events()
-    
-    def add_handler(self, event, base_class=AUTO_HANDLER_CLASS, callback=None):
-        if base_class == AUTO_HANDLER_CLASS:
-            handler_class_typename = event.classType() + 'Handler'
-            handler_class_parts = handler_class_typename.split('::')
-            base_class = sys.modules[handler_class_parts[0]]
-            for cls in handler_class_parts[1:]:
-                base_class = getattr(base_class, cls)
-        handler_name = base_class.__name__ + '_' + callback.__name__
-        handler_class = type(handler_name, (base_class,),
-                            { "notify": self._error_catcher_wrapper(callback) })
-        handler_class.__init__ = lambda self: super(handler_class, self).__init__()
-        handler = handler_class()
-        handler_info = (handler, event)
+		result = event.add(handler)
+		if not result: raise Exception('Failed to add handler ' + callback.__name__)
+		self.handlers.append(handler_info)# Avoid garbage collection
+		return handler_info
+	
+	def register_event(self, name):
+		# Unregisters to make sure there is not an old event registered due to a bad stop
+		self.app.unregisterCustomEvent(name)
+		# Registers new event
+		event = self.app.registerCustomEvent(name)
+		if event: self.custom_event_names.append(name)
+		return event
 
-        result = event.add(handler)
-        if not result:
-            raise Exception('Failed to add handler ' + callback.__name__)
-        
-        # Avoid garbage collection
-        self.handlers.append(handler_info)
-        return handler_info
+	#Timing
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	def delay(self, func, secs=0):
+		'''Puts a function at the end of the event queue, and optionally delays it. '''
+		if self.delayed_event is None:# Register the event. Will be removed when user runs clean_up()
+			self.delayed_event = self.register_event(self.delayed_event_id)
+			self.add_handler(self.delayed_event, callback=self._delayed_event_handler)
+		delay_id = self.next_delay_id
+		self.next_delay_id += 1
 
-    def remove_handler(self, handler_info):
-        handler, event = handler_info
-        self.handlers.remove(handler_info)
-        event.remove(handler)
-        # Let user assign their handle with the return value
-        return None
+		def waiter():
+			time.sleep(secs)
+			self.app.fireCustomEvent(self.delayed_event_id, str(delay_id))
 
-    def remove_all_handlers(self):
-        for handler, event in self.handlers:
-            event.remove(handler)
-        self.handlers.clear()
-    
-    def register_event(self, name):
-        # Make sure there is not an old event registered due to a bad stop
-        self.app.unregisterCustomEvent(name)
+		self.delayed_funcs[delay_id] = func
 
-        event = self.app.registerCustomEvent(name)
-        if event:
-            self.custom_event_names.append(name)
-        return event
+		if secs > 0:
+			thread = threading.Thread(target=waiter)
+			thread.isDaemon = True
+			thread.start()
+		else: self.app.fireCustomEvent(self.delayed_event_id, str(delay_id))    
 
-    def unregister_all_events(self):
-        for event_name in self.custom_event_names:
-            self.app.unregisterCustomEvent(event_name)
-        self.custom_event_names.clear()
+	def _delayed_event_handler(self, args: adsk.core.CustomEventArgs):
+		delay_id = int(args.additionalInfo)
+		func = self.delayed_funcs.pop(delay_id, None)
+		func()
 
-    def delay(self, func, secs=0):
-        '''Puts a function at the end of the event queue,
-        and optionally delays it.
-        '''
+	#Removing
+	#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	def remove_handler(self, handler_info):
+		handler, event = handler_info
+		self.handlers.remove(handler_info)
+		event.remove(handler)
+		return None # Let user assign their handle with the return value
 
-        if self.delayed_event is None:
-            # Register the event. Will be removed when user runs clean_up()
-            self.delayed_event = self.register_event(self.delayed_event_id)
-            self.add_handler(self.delayed_event,
-                             callback=self._delayed_event_handler)
+	def remove_all_handlers(self):
+		for handler, event in self.handlers:
+			event.remove(handler)
+		self.handlers.clear()
 
-        delay_id = self.next_delay_id
-        self.next_delay_id += 1
+	def unregister_all_events(self):
+		for event_name in self.custom_event_names:
+			self.app.unregisterCustomEvent(event_name)
+		self.custom_event_names.clear()
 
-        def waiter():
-            time.sleep(secs)
-            self.app.fireCustomEvent(self.delayed_event_id, str(delay_id))
-
-        self.delayed_funcs[delay_id] = func
-
-        if secs > 0:
-            thread = threading.Thread(target=waiter)
-            thread.isDaemon = True
-            thread.start()
-        else:
-            self.app.fireCustomEvent(self.delayed_event_id, str(delay_id))    
-
-    def _error_catcher_wrapper(class_self, func):
-        def catcher(func_self, args):
-            with class_self.error_catcher:
-                func(args)
-        return catcher
-
-    def _delayed_event_handler(self, args: adsk.core.CustomEventArgs):
-        delay_id = int(args.additionalInfo)
-        func = self.delayed_funcs.pop(delay_id, lambda: None)
-        func()
+	def clean_up(self, oldControl = None):
+		"""`oldControl` is an optional variable that, if/when provided, the function: \\
+		`utils.clear_ui_items(oldControl)` \\
+		is called, which attempts to remove the control after cleanup"""
+		self.remove_all_handlers()
+		self.unregister_all_events()
+		if oldControl != None: utils.clear_ui_items(oldControl)
