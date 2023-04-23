@@ -42,7 +42,13 @@ class SettingsManager:
         self._read()
 
     def __getitem__(self, key):
-        return self.settings[key]
+        try:
+            return self.settings[key]
+        except KeyError:
+            return self.default_values[key]
+
+    def get(self, key, default=None):
+        return self.settings.get(key, default)
 
     def __setitem__(self, key, value):
         self.settings[key] = value
