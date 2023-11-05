@@ -81,8 +81,9 @@ class ErrorCatcher():
             # Shorten file paths, to compact the message
             tb_str = re.sub(r'"[^"]+/(?:API/AddIns|Api/Python)', '"', tb_str)
 
-            # Attempt to scrub the user's username from the traceback, if any remains
+            # Attempt to scrub the user's username, if any remains
             tb_str = tb_str.replace(getpass.getuser(), '<user>')
+            caller = caller.replace(getpass.getuser(), '<user>')
 
             message = (f'{self.msg_prefix} error: {value}\n\n' +
                        'Copy this message by taking a screenshot. ' +
