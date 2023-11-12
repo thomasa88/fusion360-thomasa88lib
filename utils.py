@@ -33,7 +33,7 @@ def short_class(obj):
     '''Returns shortened name of Object class'''
     return obj.classType().split('::')[-1]
 
-_DEPLOY_FOLDER_PATTERN = re.compile(r'.*/webdeploy/production/[^/]+')
+_DEPLOY_FOLDER_PATTERN = re.compile(r'.*/webdeploy/(?:pre-)?production/[^/]+')
 def get_fusion_deploy_folder():
     '''
     Get the Fusion 360 deploy folder.
