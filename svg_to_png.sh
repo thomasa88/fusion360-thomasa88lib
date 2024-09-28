@@ -29,17 +29,36 @@
 INKSCAPE=inkscape
 if ! which $INKSCAPE &> /dev/null; then
     # Try to use Inkspace on Windows in Git Bash
-    INKSCAPE='/c/Program Files/Inkscape/inkscape.exe'
+    INKSCAPE='/c/Program Files/Inkscape/bin/inkscape.exe'
 fi
 
-SVG32=$(ls *.svg | grep -v _)
-SVG16=$SVG32
-if ls *_16.svg &>/dev/null; then
-    SVG16=$(echo *_16.svg)
+if which inkscape | grep -q /snap; then
+    # Handle that Inkscape in snap has very limited file access
+    SNAP_WORKAROUND=1
 fi
-#"$INKSCAPE" -z -w 16 -h 16 -e 16x16.png $SVG16
-#"$INKSCAPE" -z -w 32 -h 32 -e 32x32.png $SVG32
-#"$INKSCAPE" --export-type=png  $SVG32
-"$INKSCAPE" --export-width=16 --export-height=16 -o 16x16.png  $SVG16
-"$INKSCAPE" --export-width=32 --export-height=32 -o 32x32.png  $SVG32
+
+if [[ $1 = "" ]]; then
+    echo Usage: $0 input.svg SIZE1 SIZE2...
+    exit 1
+fi
+
+INPUT_FILE=$1
+shift
+SIZES=$@
+
+INK_INPUT_FILE=$INPUT_FILE
+INK_OUTPUT_DIR=.
+if [[ $SNAP_WORKAROUND -eq 1 ]]; then
+    INK_INPUT_FILE=$HOME/snap/inkscape/current/svg_to_png_input.svg
+    INK_OUTPUT_DIR=$HOME/snap/inkscape/current
+    cp $INPUT_FILE $INK_INPUT_FILE
+fi
+
+for SIZE in $SIZES; do
+    OUTPUT_FILE=$INK_OUTPUT_DIR/${SIZE}x${SIZE}.png 
+    "$INKSCAPE" --export-width=$SIZE --export-height=$SIZE -o $OUTPUT_FILE $INK_INPUT_FILE
+    if [[ $SNAP_WORKAROUND -eq 1 ]]; then
+        mv $OUTPUT_FILE .
+    fi
+done
 
