@@ -7,6 +7,7 @@ user32 = ctypes.WinDLL('user32', use_last_error=True)
 
 INPUT_KEYBOARD = 1
 
+KEYEVENTF_KEYDOWN = 0x0000
 KEYEVENTF_EXTENDEDKEY = 0x0001
 KEYEVENTF_KEYUP       = 0x0002
 KEYEVENTF_UNICODE     = 0x0004
@@ -15,7 +16,8 @@ KEYEVENTF_SCANCODE    = 0x0008
 MAPVK_VK_TO_VSC = 0
 
 # msdn.microsoft.com/en-us/library/dd375731
-VK_TAB  = 0x09
+VK_TAB = 0x09
+VK_RIGHT = 0x27
 
 # C struct definitions
 wintypes.ULONG_PTR = wintypes.WPARAM
@@ -57,6 +59,14 @@ class INPUT(ctypes.Structure):
     _fields_ = (("type",   wintypes.DWORD),
                 ("_input", _INPUT))
 
-def press_key(key_code):
-    inputs = INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(wVk=key_code))
-    user32.SendInput(1, ctypes.byref(inputs), ctypes.sizeof(inputs))
+def press_keys(key_codes):
+    inputs = []
+    for key_code in key_codes:
+        inputs.append(INPUT(type=INPUT_KEYBOARD,
+                    ki=KEYBDINPUT(wVk=key_code, dwFlags=KEYEVENTF_KEYDOWN))
+        )
+        inputs.append(INPUT(type=INPUT_KEYBOARD,
+                    ki=KEYBDINPUT(wVk=key_code, dwFlags=KEYEVENTF_KEYUP))
+        )
+    arr_c = (INPUT * len(inputs))(*inputs)
+    user32.SendInput(len(arr_c), ctypes.byref(arr_c), ctypes.sizeof(INPUT))
