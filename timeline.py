@@ -39,12 +39,14 @@ OCCURRENCE_BODIES_COMP = 4
 def get_timeline():
     app = adsk.core.Application.get()
 
-    # activeProduct throws if start-up is not completed
-    if not app.isStartupComplete: # Backup solution: app.documents.count == 0:
+    # activeProduct throws if start-up is not completed. It also throws when closing down
+    # for some users, likely due to no documents being open.
+    # https://github.com/thomasa88/DirectName/issues/19
+    if not app.isStartupComplete or app.documents.count == 0:
         return (TIMELINE_STATUS_PRODUCT_NOT_READY, None)
 
     product = app.activeProduct
-    if product is None or product.classType() != 'adsk::fusion::Design':
+    if product is None or type(product) is not adsk.fusion.Design:
         return (TIMELINE_STATUS_PRODUCT_NOT_READY, None)
     
     design = adsk.fusion.Design.cast(product)
