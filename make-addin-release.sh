@@ -33,7 +33,7 @@ if [[ $VERSION =~ dirty ]]; then
     fi
 fi
 
-ARCHIVE_NAME="$APP_NAME-$VERSION.zip"
+ARCHIVE_NAME="$APP_NAME-$VERSION"
 
 mkdir -p release
 
@@ -51,7 +51,8 @@ unzip -q ../lib.zip
 git init --quiet
 git add .
 git commit --quiet -m 'ZIP'
-git archive --format=zip --prefix="$APP_NAME/" -o "../$ARCHIVE_NAME" HEAD
+git archive --format=zip --prefix="$APP_NAME/" -o "../${ARCHIVE_NAME}-AppStore.zip" HEAD
+git archive --format=zip --prefix="${APP_NAME}Github/" -o "../$ARCHIVE_NAME.zip" HEAD
 
 popd > /dev/null
 rm app.zip lib.zip
@@ -60,7 +61,8 @@ rm -rf -- unpacked_release
 popd > /dev/null
 
 echo
-echo Release file: release/$ARCHIVE_NAME
+echo Release files: release/$ARCHIVE_NAME.zip
+echo Release files: release/${ARCHIVE_NAME}-AppStore.zip
 
 echo
 read -p "Open release directory and release webpage? [yN] " -n 1 -r
