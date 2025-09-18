@@ -27,14 +27,14 @@ import adsk.core, adsk.fusion, adsk.cam, traceback
 
 import inspect
 import os
-import re
+import pathlib
+import sys
 
 def short_class(obj):
     '''Returns shortened name of Object class'''
     return obj.classType().split('::')[-1]
 
-_DEPLOY_FOLDER_PATTERN = re.compile(r'.*/webdeploy/(?:pre-)?production/[^/]+')
-def get_fusion_deploy_folder():
+def get_fusion_deploy_folder() -> pathlib.Path:
     '''
     Get the Fusion 360 deploy folder.
 
@@ -46,26 +46,31 @@ def get_fusion_deploy_folder():
     E.g. see the examples for get_fusion_ui_resource_folder().
     '''
 
-    # Strip the suffix from the UI resource folder, i.e.:
-    # Windows: /Fusion/UI/FusionUI/Resources
-    # Mac: /Autodesk Fusion 360.app/Contents/Libraries/Applications/Fusion/Fusion/UI/FusionUI/Resources
+    # https://github.com/thomasa88/ThreadKeeper/issues/8 shows that the UI resource folder can be
+    # a non-webdeploy folder: /Applications/Autodesk Fusion.app/Contents/Libraries/Applications/Fusion/Fusion/UI/FusionUI/Resources
+    # Therefore, we don't use get_fusion_ui_resource_folder() anymore.
+    # Alternatives:
+    # sys.argv[0]: C:\Users\<user>\AppData\Local\Autodesk\webdeploy\production\<hash>\Fusion360.exe
+    # sys.executable: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>/Python\python
 
-    return _DEPLOY_FOLDER_PATTERN.match(get_fusion_ui_resource_folder()).group(0)
+    return pathlib.Path(sys.argv[0]).parent
 
 _resFolder = None
-def get_fusion_ui_resource_folder():
+def get_fusion_ui_resource_folder() -> pathlib.Path:
     '''
     Get the Fusion UI resource folder. Note: Not all resources reside here.
 
     Typically:
      * Windows: C:/Users/<user>/AppData/Local/Autodesk/webdeploy/production/<hash>/Fusion/UI/FusionUI/Resources
      * Mac: /Users/<user>/Library/Application Support/Autodesk/webdeploy/production/<hash>/Autodesk Fusion 360.app/Contents/Libraries/Applications/Fusion/Fusion/UI/FusionUI/Resources
+     * https://github.com/thomasa88/ThreadKeeper/issues/8#issuecomment-3291084422 found that Mac can
+       also be: /Applications/Autodesk Fusion.app/Contents/Libraries/Applications/Fusion/Fusion/UI/FusionUI/Resources
     '''
     global _resFolder
     if not _resFolder:
         app = adsk.core.Application.get()
         _resFolder = app.userInterface.workspaces.itemById('FusionSolidEnvironment').resourceFolder.replace('/Environment/Model', '')
-    return _resFolder
+    return pathlib.Path(_resFolder)
 
 def get_caller_path():
     '''Gets the filename of the file calling the function
